@@ -1,7 +1,7 @@
 import torch
 import torch.backends.cudnn
 import torch.nn.parallel
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 
 from stacked_hourglass.loss import joints_mse_loss
 from stacked_hourglass.utils.evaluation import accuracy, AverageMeter, final_preds
@@ -67,7 +67,7 @@ def do_validation_step(model, input, target, data_info, target_weight=None, flip
     # Forward pass and loss calculation.
     output = model(input)
     loss = sum(joints_mse_loss(o, target, target_weight) for o in output)
-    
+
 
     # Get the heatmaps.
     if flip:
