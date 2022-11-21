@@ -1,7 +1,7 @@
 import torch
 import torch.backends.cudnn
 import torch.nn.parallel
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 
 from stacked_hourglass.loss import joints_mse_loss
 from stacked_hourglass.utils.evaluation import accuracy, AverageMeter, final_preds

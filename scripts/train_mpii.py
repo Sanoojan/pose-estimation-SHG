@@ -6,7 +6,7 @@ import torch.backends.cudnn
 from torch.nn import DataParallel
 from torch.optim.rmsprop import RMSprop
 from torch.utils.data import DataLoader
-from tqdm.notebook import trange, tqdm
+from tqdm.auto import trange, tqdm
 
 from stacked_hourglass import hg1, hg2, hg8
 from stacked_hourglass.datasets.mpii import Mpii
