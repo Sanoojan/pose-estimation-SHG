@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Nov  7 14:11:39 2021
 
-@author: mustansar
-"""
 
 python scripts/train_mpii.py \
-    --arch=hg2 \
-    --image-path=/apps/local/shared/cv701/datasets/mpii_human_pose_v1/images/ \
-    --checkpoint=checkpoint/hg2 \
+    --arch=hg1 \
+    --image-path=/home/joseph.benjamin/LABS/cv701/Asgmt-4/data/images/ \
+    --checkpoint=checkpoint/hg1-base \
     --epochs=30 \
     --train-batch=24 \
     --workers=24 \

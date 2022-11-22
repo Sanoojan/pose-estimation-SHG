@@ -1,6 +1,6 @@
 import argparse
 import os
-
+import time
 import torch
 import torch.backends.cudnn
 from torch.nn import DataParallel
@@ -155,4 +155,6 @@ if __name__ == '__main__':
     parser.add_argument('--resume', default='', type=str, metavar='PATH',
                         help='path to latest checkpoint (default: none)')
 
+    st = time.time()
     main(parser.parse_args())
+    print("===Time taken for Training=======    >", (time.time()-st)/60, 'Mins')
