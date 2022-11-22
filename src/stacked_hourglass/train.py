@@ -3,7 +3,7 @@ import torch.backends.cudnn
 import torch.nn.parallel
 from tqdm.auto import tqdm
 
-from stacked_hourglass.loss import joints_mse_loss
+from stacked_hourglass.loss import joints_mse_loss, kldiv_distill_loss
 from stacked_hourglass.utils.evaluation import accuracy, AverageMeter, final_preds
 from stacked_hourglass.utils.transforms import fliplr, flip_back
 
@@ -14,8 +14,11 @@ def do_training_step(model, optimiser, input, target, data_info, target_weight=N
 
     with torch.enable_grad():
         # Forward pass and loss calculation.
-        output = model(input)
+        output, latent = model(input)
         loss = sum(joints_mse_loss(o, target, target_weight) for o in output)
+        ## KL-Div loss for self-distillation
+        if len(latent) >1:
+            loss+=kldiv_distill_loss(latent)
 
         # Backward pass and parameter update.
         optimiser.zero_grad()
@@ -65,7 +68,7 @@ def do_validation_step(model, input, target, data_info, target_weight=None, flip
     assert len(input) == len(target), 'input and target must contain the same number of examples.'
 
     # Forward pass and loss calculation.
-    output = model(input)
+    output, latent = model(input)
     loss = sum(joints_mse_loss(o, target, target_weight) for o in output)
 
 
@@ -74,7 +77,7 @@ def do_validation_step(model, input, target, data_info, target_weight=None, flip
         # If `flip` is true, perform horizontally flipped inference as well. This should
         # result in more robust predictions at the expense of additional compute.
         flip_input = fliplr(input)
-        flip_output = model(flip_input)
+        flip_output,_ = model(flip_input)
         flip_output = flip_output[-1].cpu()
         flip_output = flip_back(flip_output.detach(), data_info.hflip_indices)
         heatmaps = (output[-1].cpu() + flip_output) / 2

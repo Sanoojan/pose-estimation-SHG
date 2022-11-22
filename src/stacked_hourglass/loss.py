@@ -1,5 +1,5 @@
 import torch.nn as nn
-from torch.nn.functional import mse_loss
+from torch.nn.functional import mse_loss, kl_div
 
 
 def joints_mse_loss(output, target, target_weight=None):
@@ -33,3 +33,17 @@ class JointsMSELoss(nn.Module):
         if not self.use_target_weight:
             target_weight = None
         return joints_mse_loss(output, target, target_weight)
+
+
+def kldiv_distill_loss(output):
+    '''Loss fuction for self Distillation
+    output: 2dim List of Tensors with 2nd axis 1 TODO:JGB: find why?
+    '''
+    batch_size = output[0][0].size(0)
+    last = output[-1][0]
+    loss = 0
+    for i in range(len(output)-1):
+        curr = output[i][0]
+        loss+=kl_div(curr, last, log_target=True)
+
+    return loss

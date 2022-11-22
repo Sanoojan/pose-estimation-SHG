@@ -52,7 +52,7 @@ class Bottleneck(nn.Module):
         out = self.conv3(out)
 
         if self.downsample is not None:
-            residual = self.downsample(x)
+            residual = self.downsample(x) #x is residual
 
         out += residual
 
@@ -65,6 +65,9 @@ class Hourglass(nn.Module):
         self.depth = depth
         self.block = block
         self.hg = self._make_hour_glass(block, num_blocks, planes, depth)
+
+        ## TODO:JGB: Not Clean code, temporay work around
+        self.lat = []
 
     def _make_residual(self, block, num_blocks, planes):
         layers = []
@@ -92,13 +95,17 @@ class Hourglass(nn.Module):
             low2 = self._hour_glass_forward(n-1, low1)
         else:
             low2 = self.hg[n-1][3](low1)
+            self.lat.append(low2) ## TODO:JGB: jugaad
+
         low3 = self.hg[n-1][2](low2)
         up2 = F.interpolate(low3, scale_factor=2)
         out = up1 + up2
         return out
 
     def forward(self, x):
-        return self._hour_glass_forward(self.depth, x)
+        self.lat = [] ## TODO:JGB: jugaad
+        out = self._hour_glass_forward(self.depth, x)
+        return out, self.lat
 
 
 class HourglassNet(nn.Module):
@@ -162,7 +169,7 @@ class HourglassNet(nn.Module):
             )
 
     def forward(self, x):
-        out = []
+        out = []; lat =[]
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -173,17 +180,18 @@ class HourglassNet(nn.Module):
         x = self.layer3(x)
 
         for i in range(self.num_stacks):
-            y = self.hg[i](x)
+            y, z = self.hg[i](x)
             y = self.res[i](y)
             y = self.fc[i](y)
             score = self.score[i](y)
             out.append(score)
+            lat.append(z)
             if i < self.num_stacks-1:
                 fc_ = self.fc_[i](y)
                 score_ = self.score_[i](score)
                 x = x + fc_ + score_
 
-        return out
+        return out, lat
 
 
 def hg(**kwargs):
@@ -214,3 +222,13 @@ def hg2(pretrained=False, progress=True, num_blocks=1, num_classes=16):
 def hg8(pretrained=False, progress=True, num_blocks=1, num_classes=16):
     return _hg('hg8', pretrained, progress, num_stacks=8, num_blocks=num_blocks,
                num_classes=num_classes)
+
+
+
+
+if __name__ == "__main__":
+
+    model = hg2()
+    print(model)
+    pytorch_total_params = sum(p.numel() for p in  model.parameters())
+    print('Number of parameters: {0}'.format(pytorch_total_params))

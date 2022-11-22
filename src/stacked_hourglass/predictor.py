@@ -47,7 +47,7 @@ class HumanPosePredictor:
     def do_forward(self, input_tensor):
         self.model.eval()
         with torch.no_grad():
-            output = self.model(input_tensor)
+            output, latent = self.model(input_tensor)
         return output
 
     def prepare_image(self, image):
