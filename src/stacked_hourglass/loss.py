@@ -1,5 +1,5 @@
 import torch.nn as nn
-from torch.nn.functional import mse_loss, kl_div
+from torch.nn.functional import mse_loss, kl_div, softmax
 
 
 def joints_mse_loss(output, target, target_weight=None):
@@ -40,10 +40,10 @@ def kldiv_distill_loss(output):
     output: 2dim List of Tensors with 2nd axis 1 TODO:JGB: find why?
     '''
     batch_size = output[0][0].size(0)
-    last = output[-1][0]
+    last = softmax(output[-1][0], dim=1)
     loss = 0
     for i in range(len(output)-1):
-        curr = output[i][0]
+        curr = softmax(output[i][0], dim=1)
         loss+=kl_div(curr, last, log_target=True)
 
     return loss
