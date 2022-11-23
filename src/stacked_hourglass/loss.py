@@ -43,10 +43,14 @@ def kldiv_distill_loss(output):
     loss = 0
     ## for HG Latent in Middle
     last = softmax(output[-1][0], dim=1)
-    loss = 0
     for i in range(len(output)-1):
         curr = softmax(output[i][0], dim=1)
         loss+=kl_div(curr, last, reduction='batchmean')
 
+    ## for Feature after FullConvolution
+    last = softmax(output[-1][1], dim=1)
+    for i in range(len(output)-1):
+        curr = softmax(output[i][1], dim=1)
+        loss+=kl_div(curr, last, reduction='batchmean')
 
     return loss

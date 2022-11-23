@@ -67,7 +67,7 @@ class Hourglass(nn.Module):
         self.hg = self._make_hour_glass(block, num_blocks, planes, depth)
 
         ## TODO:JGB: Not Clean code, temporay work around
-        self.lat = []
+        self.latm = 0
 
     def _make_residual(self, block, num_blocks, planes):
         layers = []
@@ -95,7 +95,7 @@ class Hourglass(nn.Module):
             low2 = self._hour_glass_forward(n-1, low1)
         else:
             low2 = self.hg[n-1][3](low1)
-            self.lat.append(low2) ## TODO:JGB: jugaad
+            self.latm = low2 ## TODO:JGB: clean
 
         low3 = self.hg[n-1][2](low2)
         up2 = F.interpolate(low3, scale_factor=2)
@@ -103,9 +103,9 @@ class Hourglass(nn.Module):
         return out
 
     def forward(self, x):
-        self.lat = [] ## TODO:JGB: jugaad
+        self.latm = 0 ## reset for each HG TODO:JGB: clean
         out = self._hour_glass_forward(self.depth, x)
-        return out, self.lat
+        return out, self.latm
 
 
 class HourglassNet(nn.Module):
@@ -185,7 +185,7 @@ class HourglassNet(nn.Module):
             y = self.fc[i](y)
             score = self.score[i](y)
             out.append(score)
-            lat.append(z)
+            lat.append([z, y]) # Latent at Mid of HG and Feature after FConV
             if i < self.num_stacks-1:
                 fc_ = self.fc_[i](y)
                 score_ = self.score_[i](score)
