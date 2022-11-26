@@ -16,7 +16,7 @@ def do_training_step(model, optimiser, input, target, data_info, target_weight=N
         # Forward pass and loss calculation.
         output, latent = model(input)
         loss = sum(joints_mse_loss(o, target, target_weight) for o in output)
-        ## KL-Div loss for self-distillation
+        # KL-Div loss for self-distillation
         if len(latent) >1:
             loss+=kldiv_distill_loss(latent)
 

@@ -1,5 +1,8 @@
 import argparse
 import os.path
+import sys
+sys.path.append("src")
+
 
 import torch
 import torch.backends.cudnn

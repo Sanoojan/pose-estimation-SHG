@@ -7,6 +7,8 @@ from torch.nn import DataParallel
 from torch.optim.rmsprop import RMSprop
 from torch.utils.data import DataLoader
 from tqdm.auto import trange, tqdm
+import sys
+sys.path.append("src")
 
 from stacked_hourglass import hg1, hg2, hg8
 from stacked_hourglass.datasets.mpii import Mpii
@@ -59,7 +61,7 @@ def main(args):
         logger = Logger(os.path.join(args.checkpoint, 'log.txt'), resume=True)
     else:
         logger = Logger(os.path.join(args.checkpoint, 'log.txt'))
-        logger.set_names(['Epoch', 'LR', 'Train Loss', 'Val Loss', 'Train Acc', 'Val Acc'])
+        logger.set_names(['Epoch', '       LR', 'Train Loss', 'Val Loss', 'Train Acc', 'Val Acc'])
 
     # create data loader
     train_dataset = Mpii(args.image_path, is_train=True, inp_res=args.input_shape)
@@ -117,38 +119,38 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train a stacked hourglass model.')
     # Dataset setting
-    parser.add_argument('--image-path', default='', type=str,
+    parser.add_argument('--image-path', default='data/images/', type=str,
                         help='path to images')
 
     # Model structure
-    parser.add_argument('--arch', '-a', metavar='ARCH', default='hg8',
+    parser.add_argument('--arch', '-a', metavar='ARCH', default='hg2',
                         choices=['hg1', 'hg2', 'hg8'],
                         help='model architecture')
     # Training strategy
     parser.add_argument('--input_shape', default=(256, 256), type=int, nargs='+',
                         help='Input shape of the model. Given as: (H, W)')
-    parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
+    parser.add_argument('-j', '--workers', default=24, type=int, metavar='N',
                         help='number of data loading workers (default: 4)')
-    parser.add_argument('--epochs', default=100, type=int, metavar='N',
+    parser.add_argument('--epochs', default=30, type=int, metavar='N',
                         help='number of total epochs to run')
     parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                         help='manual epoch number (useful on restarts)')
-    parser.add_argument('--train-batch', default=6, type=int, metavar='N',
+    parser.add_argument('--train-batch', default=24, type=int, metavar='N',
                         help='train batchsize')
-    parser.add_argument('--test-batch', default=6, type=int, metavar='N',
+    parser.add_argument('--test-batch', default=24, type=int, metavar='N',
                         help='test batchsize')
-    parser.add_argument('--lr', '--learning-rate', default=2.5e-4, type=float,
+    parser.add_argument('--lr', '--learning-rate', default=1e-3, type=float,
                         metavar='LR', help='initial learning rate')
     parser.add_argument('--momentum', default=0, type=float, metavar='M',
                         help='momentum')
     parser.add_argument('--weight-decay', '--wd', default=0, type=float,
                         metavar='W', help='weight decay (default: 0)')
-    parser.add_argument('--schedule', type=int, nargs='+', default=[60, 90],
+    parser.add_argument('--schedule', type=int, nargs='+', default=[15,17],
                         help='Decrease learning rate at these epochs.')
     parser.add_argument('--gamma', type=float, default=0.1,
                         help='LR is multiplied by gamma on schedule.')
     # Miscs
-    parser.add_argument('-c', '--checkpoint', default='checkpoint', type=str, metavar='PATH',
+    parser.add_argument('-c', '--checkpoint', default='checkpoint/hg2-base-kl-debug', type=str, metavar='PATH',
                         help='path to save checkpoint (default: checkpoint)')
     parser.add_argument('--snapshot', default=0, type=int,
                         help='save models for every #snapshot epochs (default: 0)')

@@ -1,6 +1,6 @@
 import torch.nn as nn
 from torch.nn.functional import mse_loss, kl_div, softmax
-
+import torch
 
 def joints_mse_loss(output, target, target_weight=None):
     batch_size = output.size(0)
@@ -39,18 +39,20 @@ def kldiv_distill_loss(output):
     '''Loss fuction for self Distillation
     output: 2dim List of Tensors with 2nd axis 1 TODO:JGB: find why?
     '''
-    batch_size = output[0][0].size(0)
+    batch_size = output[1][0].size(0)
     loss = 0
-    ## for HG Latent in Middle
+    # for HG Latent in Middle
     last = softmax(output[-1][0], dim=1)
     for i in range(len(output)-1):
         curr = softmax(output[i][0], dim=1)
-        loss+=kl_div(curr, last, reduction='batchmean')
+        curr=torch.clamp(curr, 1e-7, 1)
+        loss+=kl_div(curr.log(), last, reduction='mean')
 
-    ## for Feature after FullConvolution
-    last = softmax(output[-1][1], dim=1)
-    for i in range(len(output)-1):
-        curr = softmax(output[i][1], dim=1)
-        loss+=kl_div(curr, last, reduction='batchmean')
-
+    ## for Feature maps
+    # last = softmax(output[-1][1], dim=1)
+    # for i in range(len(output)-1):
+    #     curr = softmax(output[i][1], dim=1)
+    #     curr=torch.clamp(curr, 1e-7, 1)
+    #     loss+=kl_div(curr.log(), last, reduction='mean')
+    # print(loss)
     return loss

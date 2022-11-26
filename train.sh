@@ -1,11 +1,9 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 
-python scripts/train_mpii.py \
-    --arch=hg1 \
-    --image-path=/home/joseph.benjamin/LABS/cv701/Asgmt-4/data/images/ \
-    --checkpoint=checkpoint/hg1-base \
+CUDA_VISIBLE_DEVICES=0 python scripts/train_mpii.py \
+    --arch=hg2 \
+    --image-path=data/images/ \
+    --checkpoint=checkpoint/hg2-base-kl-latent-only \
     --epochs=30 \
     --train-batch=24 \
     --workers=24 \
