@@ -14,11 +14,11 @@ def do_training_step(model, optimiser, input, target, data_info, target_weight=N
 
     with torch.enable_grad():
         # Forward pass and loss calculation.
-        output, latent = model(input)
+        output, latent, all_block_outs = model(input,return_all_block_outs=True)
         loss = sum(joints_mse_loss(o, target, target_weight) for o in output)
         # KL-Div loss for self-distillation
         if len(latent) >1:
-            loss+=kldiv_distill_loss(latent)
+            loss+=kldiv_distill_loss(latent,all_block_outs)
 
         # Backward pass and parameter update.
         optimiser.zero_grad()
@@ -82,8 +82,7 @@ def do_validation_step(model, input, target, data_info, target_weight=None, flip
         flip_output = flip_back(flip_output.detach(), data_info.hflip_indices)
         heatmaps = (output[-1].cpu() + flip_output) / 2
     else:
-        heatmaps = output[-1].cpu()
-
+        heatmaps = output[-1].cpu()  # changed this to evaluate first hour glass
 
     return heatmaps, loss.item()
 

@@ -28,8 +28,9 @@ class Bottleneck(nn.Module):
         self.bn1 = nn.BatchNorm2d(inplanes)
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=True)
         self.bn2 = nn.BatchNorm2d(planes)
+        #EDIT: added group conv param
         self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=stride,
-                               padding=1, bias=True)
+                        padding=1, bias=True, groups=planes)
         self.bn3 = nn.BatchNorm2d(planes)
         self.conv3 = nn.Conv2d(planes, planes * 2, kernel_size=1, bias=True)
         self.relu = nn.ReLU(inplace=True)
@@ -66,11 +67,6 @@ class Hourglass(nn.Module):
         self.block = block
         self.hg = self._make_hour_glass(block, num_blocks, planes, depth)
 
-        ## TODO:JGB: Not Clean code, temporay work around
-        self.latm = 0
-
-        self.block_outs = []
-
     def _make_residual(self, block, num_blocks, planes):
         layers = []
         for i in range(0, num_blocks):
@@ -85,6 +81,10 @@ class Hourglass(nn.Module):
                 res.append(self._make_residual(block, num_blocks, planes))
             if i == 0:
                 res.append(self._make_residual(block, num_blocks, planes))
+
+            # EDIT: deconv layer
+            # res.append(nn.ConvTranspose2d(2*planes, 2*planes, 3, stride=2,
+            #                     padding=1, output_padding=1, groups=planes))
             hg.append(nn.ModuleList(res))
         return nn.ModuleList(hg)
 
@@ -97,19 +97,18 @@ class Hourglass(nn.Module):
             low2 = self._hour_glass_forward(n-1, low1)
         else:
             low2 = self.hg[n-1][3](low1)
-            self.latm = low2 ## TODO:JGB: clean
 
         low3 = self.hg[n-1][2](low2)
+        # EDIT: deconv layer
         up2 = F.interpolate(low3, scale_factor=2)
+        # rn = len(self.hg[n-1])
+        # up2 = self.hg[n-1][rn-1](low3)
         out = up1 + up2
-        self.block_outs.append(out)
         return out
 
     def forward(self, x):
-        self.latm = 0 ## reset for each HG TODO:JGB: clean
-        self.block_outs=[]
         out = self._hour_glass_forward(self.depth, x)
-        return out, self.latm, self.block_outs
+        return out
 
 
 class HourglassNet(nn.Module):
@@ -117,8 +116,8 @@ class HourglassNet(nn.Module):
     def __init__(self, block, num_stacks=2, num_blocks=4, num_classes=16):
         super(HourglassNet, self).__init__()
 
-        self.inplanes = 64
-        self.num_feats = 128
+        self.inplanes = 48
+        self.num_feats = 96
         self.num_stacks = num_stacks
         self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
                                bias=True)
@@ -172,8 +171,8 @@ class HourglassNet(nn.Module):
                 self.relu,
             )
 
-    def forward(self, x,return_all_block_outs=False):
-        out = []; lat =[];all_block_outs=[]
+    def forward(self, x):
+        out = []; lat =[]
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -184,21 +183,17 @@ class HourglassNet(nn.Module):
         x = self.layer3(x)
 
         for i in range(self.num_stacks):
-            y, z,block_outs = self.hg[i](x)
+            y = self.hg[i](x)
             y = self.res[i](y)
             y = self.fc[i](y)
             score = self.score[i](y)
             out.append(score)
-            lat.append([z, y]) # Latent at Mid of HG and Feature after FConV
-            all_block_outs.append(block_outs) # All block outputs
             if i < self.num_stacks-1:
                 fc_ = self.fc_[i](y)
                 score_ = self.score_[i](score)
                 x = x + fc_ + score_
-        if (return_all_block_outs):
-            return out, lat, all_block_outs
-        else:
-            return out, lat
+
+        return out, 0
 
 
 def hg(**kwargs):
@@ -223,6 +218,10 @@ def hg1(pretrained=False, progress=True, num_blocks=1, num_classes=16):
 
 def hg2(pretrained=False, progress=True, num_blocks=1, num_classes=16):
     return _hg('hg2', pretrained, progress, num_stacks=2, num_blocks=num_blocks,
+               num_classes=num_classes)
+
+def hg3(pretrained=False, progress=True, num_blocks=1, num_classes=16):
+    return _hg('hg3', pretrained, progress, num_stacks=3, num_blocks=num_blocks,
                num_classes=num_classes)
 
 

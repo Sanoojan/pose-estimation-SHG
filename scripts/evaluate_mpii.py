@@ -2,7 +2,7 @@ import argparse
 import os.path
 import sys
 sys.path.append("src")
-
+import time
 
 import torch
 import torch.backends.cudnn
@@ -56,8 +56,12 @@ def main(args):
                             num_workers=args.workers, pin_memory=True)
 
     # Generate predictions for the validation set.
+    start=time.time()
     _, _, predictions = do_validation_epoch(val_loader, model, device, Mpii.DATA_INFO, args.flip)
-
+    end = time.time()
+    hours, rem = divmod(end - start, 3600)
+    mins, secs = divmod(rem, 60)
+    print(f"Total time taken: {hours:.0f}:{mins:.0f}:{secs:.0f}")
     # Report PCKh for the predictions.
     print('\nFinal validation PCKh scores:\n')
     print_mpii_validation_accuracy(predictions)
